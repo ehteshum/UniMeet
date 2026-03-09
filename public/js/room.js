@@ -71,12 +71,16 @@
     localPlaceName.textContent = userName;
     document.title = `UniMeet — ${roomId}`;
 
-    // ── ICE Servers (free STUN/TURN) ─────────────────────
+    // ── ICE Servers (STUN/TURN for NAT Traversal) ─────────────────────
     const iceConfig = {
         iceServers: [
+            // Standard STUN servers (resolves simple NAT)
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            // Free TURN servers (relays media for strict NAT/Cellular)
             {
                 urls: 'turn:openrelay.metered.ca:80',
                 username: 'openrelayproject',
@@ -92,7 +96,8 @@
                 username: 'openrelayproject',
                 credential: 'openrelayproject'
             }
-        ]
+        ],
+        iceCandidatePoolSize: 10,
     };
 
     // ── Candidate Queue ─────────────────────────────

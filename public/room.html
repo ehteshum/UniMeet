@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniMeet — Meeting Room</title>
+    <meta name="description" content="UniMeet video meeting room — free, no sign-up required.">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p>Connecting to room…</p>
+    </div>
+
+    <div class="room-wrapper">
+
+        <!-- ── Header ────────────────────────────────── -->
+        <header class="room-header">
+            <div class="room-header__left">
+                <!-- Logo -->
+                <a href="/" class="room-logo">
+                    <div class="room-logo__icon">
+                        <span class="material-symbols-outlined">video_chat</span>
+                    </div>
+                    <span class="room-logo__text">UniMeet</span>
+                </a>
+
+                <!-- Room link badge -->
+                <div class="room-link-badge" id="room-link-badge">
+                    <span class="room-link-badge__label">Room ID</span>
+                    <span class="room-link-badge__id" id="room-id-display">---</span>
+                    <button class="room-link-badge__copy" id="btn-copy-room" title="Copy room link">
+                        <span class="material-symbols-outlined">content_copy</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="room-header__right">
+                <button class="room-header__btn" id="btn-participants" title="Participants">
+                    <span class="material-symbols-outlined">group</span>
+                    <span class="count" id="participant-count">1</span>
+                </button>
+                <div class="header-divider"></div>
+                <div class="room-header__avatar" id="user-avatar">GU</div>
+            </div>
+        </header>
+
+        <!-- ── Video grid ────────────────────────────── -->
+        <main class="video-grid-area">
+            <div class="video-grid" id="video-grid">
+                <!-- Local video tile (always first) -->
+                <div class="video-tile" id="local-tile">
+                    <video id="local-video" autoplay muted playsinline></video>
+                    <div class="video-tile__placeholder" id="local-placeholder">
+                        <div class="video-tile__avatar" id="local-avatar-initials">?</div>
+                        <p class="video-tile__placeholder-name" id="local-placeholder-name">You</p>
+                    </div>
+                    <div class="video-tile__label">
+                        <span class="material-symbols-outlined mic-on" id="local-mic-icon">mic</span>
+                        <span id="local-name-label">You</span>
+                    </div>
+                </div>
+                <!-- Remote tiles will be appended here dynamically -->
+            </div>
+        </main>
+
+        <!-- ── Participants Sidebar ──────────────────── -->
+        <aside class="sidebar hidden" id="sidebar-participants">
+            <div class="sidebar__header">
+                <h3>People (<span id="sidebar-count">1</span>)</h3>
+                <button class="sidebar__close" id="btn-close-sidebar" title="Close">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="sidebar__content" id="sidebar-list">
+                <!-- Items populated by JS -->
+            </div>
+        </aside>
+
+        <!-- ── Floating toolbar ──────────────────────── -->
+        <footer class="toolbar" id="toolbar">
+            <!-- Mic toggle -->
+            <div class="toolbar__btn">
+                <button class="toolbar__btn-circle" id="btn-mic" title="Toggle microphone">
+                    <span class="material-symbols-outlined">mic</span>
+                </button>
+                <span class="toolbar__btn-label" id="label-mic">Mute</span>
+            </div>
+
+            <!-- Camera toggle -->
+            <div class="toolbar__btn">
+                <button class="toolbar__btn-circle" id="btn-camera" title="Toggle camera">
+                    <span class="material-symbols-outlined">videocam</span>
+                </button>
+                <span class="toolbar__btn-label" id="label-camera">Stop Video</span>
+            </div>
+
+            <div class="toolbar__divider"></div>
+
+            <!-- Screen share -->
+            <div class="toolbar__btn">
+                <button class="toolbar__btn-circle" id="btn-share" title="Share screen">
+                    <span class="material-symbols-outlined">present_to_all</span>
+                </button>
+                <span class="toolbar__btn-label" id="label-share">Share</span>
+            </div>
+
+            <div class="toolbar__divider"></div>
+
+            <!-- Leave -->
+            <div class="toolbar__btn">
+                <button class="toolbar__btn-leave" id="btn-leave" title="Leave meeting">
+                    <span class="material-symbols-outlined">call_end</span>
+                </button>
+                <span class="toolbar__btn-label toolbar__btn-label--leave">Leave</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Leave confirmation modal -->
+    <div class="modal-overlay hidden" id="leave-modal">
+        <div class="modal-card">
+            <div class="modal-card__icon">
+                <span class="material-symbols-outlined">logout</span>
+            </div>
+            <h3 class="modal-card__title">Leave meeting?</h3>
+            <p class="modal-card__text">Are you sure you want to leave this meeting?</p>
+            <div class="modal-card__actions">
+                <button class="modal-card__btn modal-card__btn--cancel" id="btn-leave-cancel">Stay</button>
+                <button class="modal-card__btn modal-card__btn--confirm" id="btn-leave-confirm">Leave</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io client (served by server) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/room.js"></script>
+</body>
+
+</html>

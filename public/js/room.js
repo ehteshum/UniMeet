@@ -71,14 +71,33 @@
     localPlaceName.textContent = userName;
     document.title = `UniMeet — ${roomId}`;
 
-    // ── ICE Servers (free STUN) ─────────────────────
+    // ── ICE Servers (free STUN/TURN) ─────────────────────
     const iceConfig = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun2.l.google.com:19302' },
+            {
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
         ]
     };
+
+    // ── Candidate Queue ─────────────────────────────
+    // Stores ICE candidates received before the remote description is set
+    const candidateQueue = {};
 
     // ── Socket.io ───────────────────────────────────
     const socket = io();
@@ -168,6 +187,7 @@
 
         peers[peerId] = pc;
         peerNames[peerId] = peerName;
+        candidateQueue[peerId] = [];
         return pc;
     }
 
@@ -178,6 +198,7 @@
         }
         delete remoteStreams[peerId];
         delete peerNames[peerId];
+        delete candidateQueue[peerId];
         removeRemoteTile(peerId);
     }
 
@@ -218,6 +239,15 @@
 
         try {
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+            // Process any queued candidates
+            if (candidateQueue[from] && candidateQueue[from].length > 0) {
+                for (const cand of candidateQueue[from]) {
+                    await pc.addIceCandidate(cand).catch(e => console.error('Error adding queued candidate:', e));
+                }
+                candidateQueue[from] = [];
+            }
+
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             socket.emit('answer', { to: from, answer });
@@ -232,6 +262,14 @@
         if (pc) {
             try {
                 await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+                // Process any queued candidates
+                if (candidateQueue[from] && candidateQueue[from].length > 0) {
+                    for (const cand of candidateQueue[from]) {
+                        await pc.addIceCandidate(cand).catch(e => console.error('Error adding queued candidate:', e));
+                    }
+                    candidateQueue[from] = [];
+                }
             } catch (err) {
                 console.error('Error handling answer:', err);
             }
@@ -243,9 +281,15 @@
         const pc = peers[from];
         if (pc) {
             try {
-                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                const rtcCand = new RTCIceCandidate(candidate);
+                // If remote description isn't set yet, queue the candidate
+                if (pc.remoteDescription && pc.remoteDescription.type) {
+                    await pc.addIceCandidate(rtcCand);
+                } else {
+                    candidateQueue[from].push(rtcCand);
+                }
             } catch (err) {
-                console.error('Error adding ICE candidate:', err);
+                console.error('Error adding/queuing ICE candidate:', err);
             }
         }
     });

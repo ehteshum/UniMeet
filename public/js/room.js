@@ -72,30 +72,12 @@
     document.title = `UniMeet — ${roomId}`;
 
     // ── ICE Servers (STUN/TURN for NAT Traversal) ─────────────────────
-    const iceConfig = {
+    let iceConfig = {
         iceServers: [
             // Standard STUN servers (resolves simple NAT)
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
-            // Free TURN servers (relays media for strict NAT/Cellular)
-            {
-                urls: 'turn:openrelay.metered.ca:80',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
-            },
-            {
-                urls: 'turn:openrelay.metered.ca:443',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
-            },
-            {
-                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
-            }
+            { urls: 'stun:stun2.l.google.com:19302' }
         ],
         iceCandidatePoolSize: 10,
     };
@@ -506,6 +488,19 @@
 
     // ── Initialisation ──────────────────────────────
     async function init() {
+        // Fetch Premium TURN credentials from Metered.live
+        try {
+            console.log('Fetching premium TURN credentials...');
+            const response = await fetch("https://uni-meet.metered.live/api/v1/turn/credentials?apiKey=a02831ce364124aa3c869175278306a6f7e2");
+            const fetchedIceServers = await response.json();
+            if (fetchedIceServers && fetchedIceServers.length > 0) {
+                iceConfig.iceServers = fetchedIceServers;
+                console.log('Successfully loaded premium TURN servers.');
+            }
+        } catch (turnErr) {
+            console.error('Failed to fetch premium TURN credentials, falling back to STUN', turnErr);
+        }
+
         try {
             localStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
